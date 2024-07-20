@@ -228,9 +228,14 @@ class GoogleAIChatEngine(GoogleAIEngine):
             last_user_parts, generation_config=generation_config, stream=True
         )
 
+        input_tokens_count = generator.usage_metadata.prompt_token_count
+        output_tokens_count = 0
         for chunk in generator:
+            output_tokens_count = chunk.usage_metadata.candidates_token_count
             yield chunk.candidates[0].content.parts[0].text.encode("utf8")
 
+        self.metrics.engine_input_tokens += input_tokens_count
+        self.metrics.engine_output_tokens += output_tokens_count
 
 class GoogleAIChat(GoogleAI, Chat):
     pass

@@ -17,16 +17,30 @@ A sample means of achieving this:
 ```python
 @pytest.fixture(scope="module")
 def phi3_model(selected_model, selected_model_name):
-    if selected_model_name in ["transformers_phi3cpu_mini_4k_instruct"]:
+    if selected_model_name in ["transformers_phi3_mini_4k_instruct_cpu"]:
         return selected_model
     else:
         pytest.skip("Requires Phi3 model")
 ```
 
+## Selecting a model
+
+To select a particular model when running the tests, use the `--selected_model` command line option.
+For example:
+
+```bash
+python -m pytest --selected_model transformers_gemma2_9b_cpu ./tests/model_integration/
+```
+
+The allowed values for `--selected_model` are in the [`_llms_for_testing.py`](./_llms_for_testing.py) file, and are concatenated into the `AVAILABLE_MODELS` dictionary.
+Alternatively, the `GUIDANCE_SELECTED_MODEL` environment variable can be used to override the default value for `--selected_model` (which can be useful when using a debugger).
+
 ### A Note on Credentials
 
 As noted above the `need_credentials` tests are mainly for `Grammarless` models - those for remote endpoints which do not support Guidance grammars (there are a few exceptions, which is why the directory isn't simply named `grammarless`).
 As endpoints with Guidance grammar support come online, their tests should *not* go in there; these should go into `model_integration` and `model_specific`, but will only be run in CI builds.
+Similarly, some models (e.g. LLama3) require credentials in order to download their weights from Hugging Face.
+These should be run through the `model_integration` and `model_specific` tests, but this run will happen from the CI build, and hence have credential access.
 
 ## Testing Goal
 

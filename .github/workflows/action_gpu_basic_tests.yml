@@ -16,10 +16,10 @@ jobs:
       fail-fast: false # Don't cancel all on first failure
       matrix:
         model:
-          - "gpt2gpu"
-          - "phi2gpu"
-          # - "transformers_phi3_small_8k_instruct" Does not run on tesla t4
-          # - "hfllama_7b_gpu" Keeps causing intermittent segfaults
+          - "transformers_gpt2_gpu"
+          - "transformers_phi2_gpu"
+          # - "transformers_phi3_small_8k_instruct_gpu" Does not run on tesla t4
+          # - "llamacpp_llama2_7b_gpu" Keeps causing intermittent segfaults
     runs-on: ${{ inputs.os }}
 
     steps:
@@ -43,7 +43,7 @@ jobs:
       - name: Ensure NVIDIA SDK available
         run: |
           sudo apt-get -y install cuda-toolkit
-          echo "/usr/local/cuda-12.5/bin" >> $GITHUB_PATH
+          echo "/usr/local/cuda-12.6/bin" >> $GITHUB_PATH
       - name: Install dependencies
         shell: bash
         run: |
@@ -54,11 +54,15 @@ jobs:
       - name: Other dependencies
         run: |
           pip install sentencepiece
+          echo "=============================="
+          pip uninstall -y transformers
+          pip install "transformers!=4.43.0,!=4.43.1,!=4.43.2,!=4.43.3" # Issue 965
       - name: GPU pip installs
         run: |
           pip install accelerate
+          echo "=============================="
           pip uninstall -y llama-cpp-python
-          CMAKE_ARGS="-DGGML_CUDA=on" pip install "llama-cpp-python!=0.2.58,!=0.2.75"
+          CMAKE_ARGS="-DGGML_CUDA=on" pip install "llama-cpp-python!=0.2.58,!=0.2.75,!=0.2.84"
       - name: Check GPU available
         run: |
           python -c "import torch; assert torch.cuda.is_available()"

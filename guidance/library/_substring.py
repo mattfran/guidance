@@ -1,9 +1,9 @@
-from typing import Optional
+from typing import Optional, Dict, Union
 
 from .._guidance import guidance
 
 # from ._prefix_tree import prefix_tree
-from .._grammar import string, select, capture
+from .._grammar import string, select, capture, as_regular_grammar, Terminal, GrammarFunction
 from ._optional import optional
 
 
@@ -95,7 +95,7 @@ class SuffixAutomaton:
 @guidance(stateless=True, dedent=False)
 def substring(lm, target_string: str, name: Optional[str] = None):
     suffix_automaton = SuffixAutomaton(target_string)
-    node_cache = {}
+    node_cache: Dict[int, Union[Terminal, GrammarFunction]] = {}
     state_stack = [0]  # Start with the initial state index (0) on the stack
 
     # Loop as long as there are states on the stack
@@ -135,7 +135,12 @@ def substring(lm, target_string: str, name: Optional[str] = None):
             )
             state_stack.pop()
 
-    return lm + capture(node_cache[0], name=name)
+    reg_gram = as_regular_grammar(node_cache[0])
+
+    if name is not None:
+        return lm + capture(reg_gram, name=name)
+    else:
+        return lm + reg_gram
 
 
 # @guidance(stateless=True, dedent=False)

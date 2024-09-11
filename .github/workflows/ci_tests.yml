@@ -47,7 +47,7 @@ jobs:
       - name: Ensure NVIDIA SDK available
         run: |
           sudo apt-get -y install cuda-toolkit
-          echo "/usr/local/cuda-12.5/bin" >> $GITHUB_PATH
+          echo "/usr/local/cuda-12.6/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
@@ -57,7 +57,7 @@ jobs:
       - name: GPU pip installs
         run: |
           pip install accelerate
-          CMAKE_ARGS="-DGGML_CUDA=on" pip install "llama-cpp-python!=0.2.58,!=0.2.75"
+          CMAKE_ARGS="-DGGML_CUDA=on" pip install "llama-cpp-python!=0.2.58,!=0.2.75,!=0.2.84"
       - name: Check GPU available
         run: |
           python -c "import torch; assert torch.cuda.is_available()"
@@ -75,10 +75,10 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
           # Configure endpoints for Azure OpenAI
-          AZUREAI_CHAT_ENDPOINT: ${{ secrets.AZUREAI_CHAT_ENDPOINT }}
-          AZUREAI_CHAT_MODEL: ${{ secrets.AZUREAI_CHAT_MODEL }}
-          AZUREAI_COMPLETION_ENDPOINT: ${{ secrets.AZUREAI_COMPLETION_ENDPOINT }}
-          AZUREAI_COMPLETION_MODEL: ${{ secrets.AZUREAI_COMPLETION_MODEL }}
+          AZUREAI_CHAT_ENDPOINT: ${{ vars.AZUREAI_CHAT_ENDPOINT }}
+          AZUREAI_CHAT_MODEL: ${{ vars.AZUREAI_CHAT_MODEL }}
+          AZUREAI_COMPLETION_ENDPOINT: ${{ vars.AZUREAI_COMPLETION_ENDPOINT }}
+          AZUREAI_COMPLETION_MODEL: ${{ vars.AZUREAI_COMPLETION_MODEL }}
           # Configure endpoints for Azure AI Studio
           AZURE_AI_STUDIO_PHI3_ENDPOINT: ${{ vars.AZURE_AI_STUDIO_PHI3_ENDPOINT }}
           AZURE_AI_STUDIO_PHI3_DEPLOYMENT: ${{ vars.AZURE_AI_STUDIO_PHI3_DEPLOYMENT }}
@@ -105,11 +105,11 @@ jobs:
       matrix:
         python-version: ["3.9", "3.10", "3.11", "3.12"]
         model:
-          - hfllama_gemma2cpu_9b
-          - transformers_gemma2cpu_9b
-          - transformers_gemma2gpu_9b
-          - transformers_llama3cpu_8b
-          # - transformers_llama3gpu_8b Does not reliably work on GPU build machines
+          - llamacpp_gemma2_9b_cpu
+          - transformers_gemma2_9b_cpu
+          - transformers_gemma2_9b_gpu
+          - transformers_llama3_8b_cpu
+          # - transformers_llama3_8b_gpu Does not reliably work on GPU build machines
 
     steps:
       - uses: actions/checkout@v4
@@ -132,7 +132,7 @@ jobs:
       - name: Ensure NVIDIA SDK available
         run: |
           sudo apt-get -y install cuda-toolkit
-          echo "/usr/local/cuda-12.5/bin" >> $GITHUB_PATH
+          echo "/usr/local/cuda-12.6/bin" >> $GITHUB_PATH
       - name: Install dependencies
         shell: bash
         run: |
@@ -143,10 +143,16 @@ jobs:
       - name: Other dependencies
         run: |
           pip install sentencepiece
+          echo "=============================="
+          pip uninstall -y transformers
+          pip install "transformers!=4.43.0,!=4.43.1,!=4.43.2,!=4.43.3" # Issue 965
       - name: GPU pip installs
         run: |
           pip install accelerate
           pip uninstall -y llama-cpp-python
+          echo "======================"
+          nvcc --version
+          echo "======================"
           CMAKE_ARGS="-DGGML_CUDA=on" pip install "llama-cpp-python!=0.2.58,!=0.2.75"
       - name: Check GPU available
         run: |
@@ -158,7 +164,45 @@ jobs:
         run: |
           pytest -vv --cov=guidance --cov-report=xml --cov-report=term-missing \
             --selected_model ${{ matrix.model }} \
-            ./tests/model_integration/test_model.py
+            ./tests/model_integration/test_model.py \
+            ./tests/model_specific/
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+
+
+  remote-endpoint-tests-linux-python:
+    strategy:
+      fail-fast: false # Don't cancel all on first failure
+      matrix:
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
+        model:
+          - "azure_guidance"
+    runs-on: Large_Linux
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        shell: bash
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -e .[test]
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+      - name: Run tests (except server)
+        shell: bash
+        env:
+          AZUREAI_GUIDANCE_ENABLED_URL: ${{ vars.AZUREAI_GUIDANCE_ENABLED_URL }}
+          AZUREAI_GUIDANCE_ENABLED_URL_KEY: ${{ secrets.AZUREAI_GUIDANCE_ENABLED_URL_KEY }}
+        run: |
+          pytest --cov=guidance --cov-report=xml --cov-report=term-missing \
+            --selected_model ${{ matrix.model }} \
+            ./tests/unit ./tests/model_integration ./tests/model_specific
       - name: Upload coverage reports to Codecov
         uses: codecov/codecov-action@v4
         with:

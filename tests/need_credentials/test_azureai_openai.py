@@ -17,6 +17,9 @@ def azureai_chat_model(rate_limiter):
     azureai_endpoint = env_or_fail("AZUREAI_CHAT_ENDPOINT")
     model = env_or_fail("AZUREAI_CHAT_MODEL")
 
+    print(f"{azureai_endpoint=}")
+    print(f"{model=}")
+
     token_provider = get_bearer_token_provider(
         DefaultAzureCredential(), "https://cognitiveservices.azure.com/.default"
     )
@@ -37,6 +40,7 @@ def test_azureai_openai_chat_longer_1(azureai_chat_model):
     common_chat_testing.longer_chat_1(azureai_chat_model)
 
 
+@pytest.mark.xfail(reason="Issue #1003")
 def test_azureai_openai_chat_longer_2(azureai_chat_model):
     common_chat_testing.longer_chat_2(azureai_chat_model)
 
@@ -48,7 +52,7 @@ def test_azureai_openai_chat_alt_args(rate_limiter):
     parsed_url = urlparse(azureai_endpoint)
     parsed_query = parse_qs(parsed_url.query)
     azureai_deployment = pathlib.Path(parsed_url.path).parts[3]
-    version = parsed_query["api-version"]
+    version = parsed_query["api-version"][0]
     min_azureai_endpoint = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     token_provider = get_bearer_token_provider(
@@ -97,7 +101,7 @@ def test_azureai_openai_completion_alt_args(rate_limiter):
     parsed_url = urlparse(azureai_endpoint)
     parsed_query = parse_qs(parsed_url.query)
     azureai_deployment = pathlib.Path(parsed_url.path).parts[3]
-    version = parsed_query["api-version"]
+    version = parsed_query["api-version"][0]
     min_azureai_endpoint = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     token_provider = get_bearer_token_provider(

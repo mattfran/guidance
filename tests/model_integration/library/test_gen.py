@@ -156,8 +156,8 @@ def test_non_token_force(selected_model: models.Model):
     "pattern",
     [
         "(Scott is a person|Scott is a persimmon)",
-        r"Scott is a persimmon.*\.",
-        r"\d\.*\d+",
+        r"Scott is a persimmon.{0,20}\.",
+        r"[0-9]\.{0,20}[0-9]+",
     ],
 )
 def test_various_regexes(selected_model: models.Model, prompt: str, pattern: str):
@@ -170,10 +170,10 @@ def test_various_regexes(selected_model: models.Model, prompt: str, pattern: str
 @pytest.mark.resource_intensive
 def test_long_prompt(selected_model: models.Model, selected_model_name: str):
     if selected_model_name in [
-        "hfllama7b",
-        "hfllama_7b_gpu",
-        "hfllama_mistral_7b",
-        "transformers_mistral_7b",
+        "llamacpp_llama2_7b_cpu",
+        "llamacpp_llama2_7b_gpu",
+        "llamacpp_mistral_7b_cpu",
+        "transformers_mistral_7b_cpu",
     ]:
         pytest.xfail("Insufficient context window in model")
     lm = selected_model

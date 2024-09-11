@@ -7,7 +7,7 @@ from ..utils import get_model
 
 @pytest.fixture(scope="module")
 def phi3_model(selected_model, selected_model_name):
-    if selected_model_name in ["transformers_phi3cpu_mini_4k_instruct"]:
+    if selected_model_name in ["transformers_phi3_mini_4k_instruct_cpu"]:
         return selected_model
     else:
         pytest.skip("Requires Phi3 model")
@@ -15,7 +15,7 @@ def phi3_model(selected_model, selected_model_name):
 
 @pytest.fixture(scope="module")
 def llama3_model(selected_model, selected_model_name):
-    if selected_model_name in ["transformers_llama3cpu_8b"] and selected_model is not None:
+    if selected_model_name in ["transformers_llama3_8b_cpu"] and selected_model is not None:
         return selected_model
     else:
         pytest.skip("Requires Llama3 model (needs HF_TOKEN to be set)")
@@ -50,14 +50,15 @@ TRANSFORMER_MODELS = {
 
 @pytest.mark.parametrize(["model_name", "model_kwargs"], TRANSFORMER_MODELS.items())
 def test_transformer_smoke_gen(model_name, model_kwargs):
+    MAX_TOKENS = 2
     my_model = get_model(f"transformers:{model_name}", **model_kwargs)
 
     prompt = "How many sides has a triangle?"
-    lm = my_model + prompt + gen(name="answer", max_tokens=2)
+    lm = my_model + prompt + gen(name="answer", max_tokens=MAX_TOKENS)
     assert len(lm["answer"]) > 0, f"Output: {lm['answer']}"
 
-    # Inexact, but at least make sure not too much was produced
-    assert len(lm["answer"]) < 8, f"Output: {lm['answer']}"
+    # Make sure not too much was produced
+    assert len(lm.engine.tokenizer.encode(lm["answer"].encode())) <= MAX_TOKENS, f"Output: {lm['answer']}"
 
 
 @pytest.mark.parametrize(["model_name", "model_kwargs"], TRANSFORMER_MODELS.items())

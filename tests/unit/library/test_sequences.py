@@ -21,9 +21,9 @@ class TestExactlynRepeats:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("bbb", b"bbb", b"B", set([Byte(b"b")])),
-            ("bbbbb", b"bbbb", b"b", set([Byte(b"B")])),
-            ("aaaa", b"", b"a", set([Byte(b"b")])),
+            ("bbb", b"bbb", b"B", {b"b"}),
+            ("bbbbb", b"bbbb", b"b", {b"B"}),
+            ("aaaa", b"", b"a", {b"b"}),
         ],
     )
     def test_bad_repeats(self, bad_string: str, good_bytes, failure_byte, allowed_bytes):
@@ -31,10 +31,10 @@ class TestExactlynRepeats:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, exactly_n_repeats("b", 4), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
 
@@ -59,8 +59,8 @@ class TestAtMostnRepeats:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("bbbbb", b"bbbb", b"b", set([Byte(b"B")])),
-            ("aaaa", b"", b"a", set([Byte(b"b"), Byte(b"B")])),
+            ("bbbbb", b"bbbb", b"b", {b"B"}),
+            ("aaaa", b"", b"a", {b"b", b"B"}),
         ],
     )
     def test_bad_repeats(self, bad_string: str, good_bytes, failure_byte, allowed_bytes):
@@ -68,10 +68,10 @@ class TestAtMostnRepeats:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, at_most_n_repeats("b", 4), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
 
@@ -105,8 +105,8 @@ class TestSequence:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("ba", b"b", b"a", set([Byte(b"b"), Byte(b"B")])),
-            ("a", b"", b"a", set([Byte(b"b"), Byte(b"B")])),
+            ("ba", b"b", b"a", {b"b", b"B"}),
+            ("a", b"", b"a", {b"b", b"B"}),
         ],
     )
     def test_bad_repeats_unconstrained(
@@ -116,10 +116,10 @@ class TestSequence:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, sequence("b"), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
 
@@ -136,10 +136,10 @@ class TestSequence:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("bbb", b"bbb", b"B", set([Byte(b"b")])),
-            ("aaaa", b"", b"a", set([Byte(b"b")])),
-            ("bbbba", b"bbbb", b"a", set([Byte(b"b"), Byte(b"B")])),
-            ("bbbbbba", b"bbbbbb", b"a", set([Byte(b"b"), Byte(b"B")])),
+            ("bbb", b"bbb", b"B", {b"b"}),
+            ("aaaa", b"", b"a", {b"b"}),
+            ("bbbba", b"bbbb", b"a", {b"b", b"B"}),
+            ("bbbbbba", b"bbbbbb", b"a", {b"b", b"B"}),
         ],
     )
     def test_bad_repeats_min_length(
@@ -149,10 +149,10 @@ class TestSequence:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, sequence("b", min_length=4), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
 
@@ -170,8 +170,8 @@ class TestSequence:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("bbb", b"bb", b"b", set([Byte(b"B")])),
-            ("aa", b"", b"a", set([Byte(b"b"), Byte(b"B")])),
+            ("bbb", b"bb", b"b", {b"B"}),
+            ("aa", b"", b"a", {b"b", b"B"}),
         ],
     )
     def test_bad_repeats_max_length(
@@ -181,10 +181,10 @@ class TestSequence:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, sequence("b", max_length=2), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
 
@@ -235,11 +235,11 @@ class TestSequence:
     @pytest.mark.parametrize(
         ["bad_string", "good_bytes", "failure_byte", "allowed_bytes"],
         [
-            ("", b"", b"B", set([Byte(b"b")])),
-            ("bbb", b"bb", b"b", set([Byte(b"B")])),
-            ("aa", b"", b"a", set([Byte(b"b")])),
-            ("ba", b"b", b"a", set([Byte(b"b"), Byte(b"B")])),
-            ("bba", b"bb", b"a", set([Byte(b"B")])),
+            ("", b"", b"B", {b"b"}),
+            ("bbb", b"bb", b"b", {b"B"}),
+            ("aa", b"", b"a", {b"b"}),
+            ("ba", b"b", b"a", {b"b", b"B"}),
+            ("bba", b"bb", b"a", {b"B"}),
         ],
     )
     def test_bad_repeats_min_max_length(
@@ -249,9 +249,9 @@ class TestSequence:
         SUFFIX = "BBB"
         grammar = Join([PREFIX, sequence("b", min_length=1, max_length=2), SUFFIX])
         check_match_failure(
-            PREFIX + bad_string + SUFFIX,
-            PREFIX.encode() + good_bytes,
-            failure_byte,
-            allowed_bytes,
+            bad_string=PREFIX + bad_string + SUFFIX,
+            good_bytes=PREFIX.encode() + good_bytes,
+            failure_byte=failure_byte,
+            allowed_bytes=allowed_bytes,
             grammar=grammar,
         )
